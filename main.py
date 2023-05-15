@@ -1,28 +1,5 @@
-import math
 import os
-import pickle
-import re
-
-import dlib
-import numpy as np
-import PIL.Image
-from pkg_resources import resource_filename
-from sklearn import neighbors
-
-face_detector = dlib.get_frontal_face_detector()
-
-face_recognition_model = resource_filename(__name__, "models/dlib_face_recognition_resnet_model_v1.dat")
-face_encoder = dlib.face_recognition_model_v1(face_recognition_model)
-
-predictor_5_point_model = resource_filename(__name__, "models/shape_predictor_5_face_landmarks.dat")
-pose_predictor_5_point = dlib.shape_predictor(predictor_5_point_model)
-
-cnn_face_detection_model = resource_filename(__name__, "models/mmod_human_face_detector.dat")
-cnn_face_detector = dlib.cnn_face_detection_model_v1(cnn_face_detection_model)
-
-def image_files_in_folder(folder):
-    return [os.path.join(folder, f) for f in os.listdir(folder) if re.match(r'.*\.(jpg|jpeg|png)', f, flags=re.I)]
-
+from modules import *
 
 def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo='ball_tree', verbose=False):
     """
@@ -92,135 +69,72 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo='ball_tree
             
     return knn_clf
 
-def _rect_to_css(rect):
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+def predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6):
     """
-    Convert a dlib 'rect' object to a plain tuple in (top, right, bottom, left) order
+    Recognizes faces in given image using a trained KNN classifier
 
-    :param rect: a dlib 'rect' object
-    :return: a plain tuple representation of the rect in (top, right, bottom, left) order
+    :param X_img_path: path to image to be recognized
+    :param knn_clf: (optional) a knn classifier object. if not specified, model_save_path must be specified.
+    :param model_path: (optional) path to a pickled knn classifier. if not specified, model_save_path must be knn_clf.
+    :param distance_threshold: (optional) distance threshold for face classification. the larger it is, the more chance
+           of mis-classifying an unknown person as a known one.
+    :return: a list of names and face locations for the recognized faces in the image: [(name, bounding box), ...].
+        For faces of unrecognized persons, the name 'unknown' will be returned.
     """
-    return rect.top(), rect.right(), rect.bottom(), rect.left()
+    if not os.path.isfile(X_img_path) or os.path.splitext(X_img_path)[1][1:] not in ALLOWED_EXTENSIONS:
+        raise Exception("Invalid image path: {}".format(X_img_path))
 
-def _css_to_rect(css):
-    """
-    Convert a tuple in (top, right, bottom, left) order to a dlib `rect` object
+    if knn_clf is None and model_path is None:
+        raise Exception("Must supply knn classifier either thourgh knn_clf or model_path")
 
-    :param css:  plain tuple representation of the rect in (top, right, bottom, left) order
-    :return: a dlib `rect` object
-    """
-    return dlib.rectangle(css[3], css[0], css[1], css[2])
+    # Load a trained KNN model (if one was passed in)
+    if knn_clf is None:
+        with open(model_path, 'rb') as f:
+            knn_clf = pickle.load(f)
 
-def _trim_css_to_bounds(css, image_shape):
-    """
-    Make sure a tuple in (top, right, bottom, left) order is within the bounds of the image.
+    # Load image file and find face locations
+    X_img = load_image_file(X_img_path)
+    X_face_locations = face_locations(X_img)
 
-    :param css:  plain tuple representation of the rect in (top, right, bottom, left) order
-    :param image_shape: numpy shape of the image array
-    :return: a trimmed plain tuple representation of the rect in (top, right, bottom, left) order
-    """
-    return max(css[0], 0), min(css[1], image_shape[1]), min(css[2], image_shape[0]), max(css[3], 0)
+    # If no faces are found in the image, return an empty result.
+    if len(X_face_locations) == 0:
+        return []
 
+    # Find encodings for faces in the test iamge
+    faces_encodings = face_encodings(X_img, known_face_locations=X_face_locations)
 
-def face_locations(img, number_of_times_to_upsample=1, model="hog"):
-    """
-    Returns an array of bounding boxes of human faces in a image
+    # Use the KNN model to find the best matches for the test face
+    closest_distances = knn_clf.kneighbors(faces_encodings, n_neighbors=1)
+    are_matches = [closest_distances[0][i][0] <= distance_threshold for i in range(len(X_face_locations))]
 
-    :param img: An image (as a numpy array)
-    :param number_of_times_to_upsample: How many times to upsample the image looking for faces. Higher numbers find smaller faces.
-    :param model: Which face detection model to use. "hog" is less accurate but faster on CPUs. "cnn" is a more accurate
-                  deep-learning model which is GPU/CUDA accelerated (if available). The default is "hog".
-    :return: A list of tuples of found face locations in css (top, right, bottom, left) order
-    """
-    # if model == "cnn":
-    #     return [_trim_css_to_bounds(_rect_to_css(face.rect), img.shape) for face in _raw_face_locations(img, number_of_times_to_upsample, "cnn")]
-    # else:
-    lista = []
-    for face in face_detector(img, number_of_times_to_upsample):
-        r = _rect_to_css(face)
-        lista.append(_trim_css_to_bounds(r , img.shape))
-    return lista 
-
-def _raw_face_locations(img, number_of_times_to_upsample=1, model="hog"):
-    """
-    Returns an array of bounding boxes of human faces in a image
-
-    :param img: An image (as a numpy array)
-    :param number_of_times_to_upsample: How many times to upsample the image looking for faces. Higher numbers find smaller faces.
-    :param model: Which face detection model to use. "hog" is less accurate but faster on CPUs. "cnn" is a more accurate
-                  deep-learning model which is GPU/CUDA accelerated (if available). The default is "hog".
-    :return: A list of dlib 'rect' objects of found face locations
-    """
-    if model == "cnn":
-        return cnn_face_detector(img, number_of_times_to_upsample)
-    else:
-        return face_detector(img, number_of_times_to_upsample)
-
-def _raw_face_landmarks(face_image, face_locations=None, model="small"):
-    if face_locations is None:
-        face_locations = _raw_face_locations(face_image)
-    else:
-        face_locations = [_css_to_rect(face_location) for face_location in face_locations]
-
-    # pose_predictor = pose_predictor_68_point
-
-    if model == "small":
-        pose_predictor = pose_predictor_5_point
-
-    return [pose_predictor(face_image, face_location) for face_location in face_locations]
-
-def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="small"):
-    """
-    Given an image, return the 128-dimension face encoding for each face in the image.
-
-    :param face_image: The image that contains one or more faces
-    :param known_face_locations: Optional - the bounding boxes of each face if you already know them.
-    :param num_jitters: How many times to re-sample the face when calculating encoding. Higher is more accurate, but slower (i.e. 100 is 100x slower)
-    :param model: Optional - which model to use. "large" or "small" (default) which only returns 5 points but is faster.
-    :return: A list of 128-dimensional face encodings (one for each face in the image)
-    """
-    raw_landmarks = _raw_face_landmarks(face_image, known_face_locations, model)
-    lista = []
-    for raw_landmark_set in raw_landmarks:
-        lista.append(np.array(face_encoder.compute_face_descriptor(face_image, raw_landmark_set, num_jitters)))        
-    return lista
-
-
-def load_image_file(file, mode='RGB'):
-    """
-    Loads an image file (.jpg, .png, etc) into a numpy array
-
-    :param file: image file name or file object to load
-    :param mode: format to convert the image to. Only 'RGB' (8-bit RGB, 3 channels) and 'L' (black and white) are supported.
-    :return: image contents as numpy array
-    """
-    im = PIL.Image.open(file)
-    if mode:
-        im = im.convert(mode)
-    return np.array(im)
+    # Predict classes and remove classifications that aren't within the threshold
+    return [(pred, loc) if rec else ("unknown", loc) for pred, loc, rec in zip(knn_clf.predict(faces_encodings), X_face_locations, are_matches)]
 
 
 if __name__ == "__main__":
     # STEP 1: Train the KNN classifier and save it to disk
     # Once the model is trained and saved, you can skip this step next time.
-    print("Training KNN classifier...")
-    classifier = train("./faces_train", model_save_path="trained_model.clf", n_neighbors=2)
-    print("Training complete!")
+    model_name = "trained_knn_model.clf"
+
+    # print("Training KNN classifier...")
+    # classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2)
+    # print("Training complete!")
 
     # STEP 2: Using the trained classifier, make predictions for unknown images
-    # count = 0
-    # for image_file in os.listdir("knn_examples/test"):
-    #     full_file_path = os.path.join("knn_examples/test", image_file)
+    for image_file in os.listdir("./test_faces"):
+        full_file_path = os.path.join("./test_faces", image_file)
 
-    #     print("Looking for faces in {}".format(image_file))
+        print("Looking for faces in {}".format(image_file))
 
-    #     # Find all people in the image using a trained classifier model
-    #     # Note: You can pass in either a classifier file name or a classifier model instance
-    #     predictions = predict(full_file_path, model_path="trained_knn_model.clf")
+        # Find all people in the image using a trained classifier model
+        # Note: You can pass in either a classifier file name or a classifier model instance
+        predictions = predict(full_file_path, model_path=model_name, distance_threshold=0.5)
        
-    #     # Print results on the console
-    #     for name, (top, right, bottom, left) in predictions:
-    #         print("- Found {} at ({}, {})".format(name, left, top))
+        # Print results on the console
+        for name, (top, right, bottom, left) in predictions:
+            print("- Found {} at ({}, {})".format(name, left, top))
 
-    #     # Display results overlaid on an image
-    #     show_prediction_labels_on_image(count,os.path.join("knn_examples/test", image_file), predictions)
-    #     count = count + 1
+        # Display results overlaid on an image
+        show_prediction_labels_on_image(os.path.join("./test_faces", image_file), predictions)
