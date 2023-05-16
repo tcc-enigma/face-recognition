@@ -119,7 +119,7 @@ if __name__ == "__main__":
     model_name = "trained_knn_model.clf"
 
     # print("Training KNN classifier...")
-    # classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2)
+    classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2)
     # print("Training complete!")
 
     # STEP 2: Using the trained classifier, make predictions for unknown images
