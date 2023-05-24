@@ -8,7 +8,6 @@ import numpy as np
 import PIL.Image
 from PIL import Image, ImageDraw
 from pkg_resources import resource_filename
-from sklearn import neighbors
 
 face_detector = dlib.get_frontal_face_detector()
 

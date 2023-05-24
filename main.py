@@ -1,5 +1,9 @@
 import os
+
+from sklearn import neighbors
+
 from modules import *
+
 
 def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo='ball_tree', verbose=False):
     """
