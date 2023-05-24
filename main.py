@@ -33,8 +33,6 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo='ball_tree
     X = []
     y = []
 
-    #h = 0.02
-
     # Loop through each person in the training set
     for class_dir in os.listdir(train_dir):
         if not os.path.isdir(os.path.join(train_dir, class_dir)):

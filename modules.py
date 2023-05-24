@@ -17,6 +17,9 @@ face_encoder = dlib.face_recognition_model_v1(face_recognition_model)
 predictor_5_point_model = resource_filename(__name__, "models/shape_predictor_5_face_landmarks.dat")
 pose_predictor_5_point = dlib.shape_predictor(predictor_5_point_model)
 
+predictor_68_point_model = resource_filename(__name__, "models/shape_predictor_68_face_landmarks.dat")
+pose_predictor_68_point = dlib.shape_predictor(predictor_68_point_model)
+
 cnn_face_detection_model = resource_filename(__name__, "models/mmod_human_face_detector.dat")
 cnn_face_detector = dlib.cnn_face_detection_model_v1(cnn_face_detection_model)
 
@@ -66,11 +69,11 @@ def face_locations(img, number_of_times_to_upsample=1, model="hog"):
     # if model == "cnn":
     #     return [_trim_css_to_bounds(_rect_to_css(face.rect), img.shape) for face in _raw_face_locations(img, number_of_times_to_upsample, "cnn")]
     # else:
-    lista = []
+    list_faces = []
     for face in face_detector(img, number_of_times_to_upsample):
         r = _rect_to_css(face)
-        lista.append(_trim_css_to_bounds(r , img.shape))
-    return lista 
+        list_faces.append(_trim_css_to_bounds(r , img.shape))
+    return list_faces 
 
 def _raw_face_locations(img, number_of_times_to_upsample=1, model="hog"):
     """
@@ -87,7 +90,7 @@ def _raw_face_locations(img, number_of_times_to_upsample=1, model="hog"):
     else:
         return face_detector(img, number_of_times_to_upsample)
 
-def _raw_face_landmarks(face_image, face_locations=None, model="small"):
+def _raw_face_landmarks(face_image, face_locations=None, model="large"):
     if face_locations is None:
         face_locations = _raw_face_locations(face_image)
     else:
@@ -97,10 +100,14 @@ def _raw_face_landmarks(face_image, face_locations=None, model="small"):
 
     if model == "small":
         pose_predictor = pose_predictor_5_point
+    elif model == "large":
+        pose_predictor = pose_predictor_68_point
 
-    return [pose_predictor(face_image, face_location) for face_location in face_locations]
+    landmarks = [pose_predictor(face_image, face_location) for face_location in face_locations]
+    
+    return landmarks
 
-def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="small"):
+def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="large"):
     """
     Given an image, return the 128-dimension face encoding for each face in the image.
 
