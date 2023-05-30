@@ -9,7 +9,10 @@ import PIL.Image
 from PIL import Image, ImageDraw
 from pkg_resources import resource_filename
 
-face_detector = dlib.get_frontal_face_detector()
+hog_face_detector = dlib.get_frontal_face_detector()
+
+cnn_face_detection_model = resource_filename(__name__, "models/mmod_human_face_detector.dat")
+cnn_face_detector = dlib.cnn_face_detection_model_v1(cnn_face_detection_model)
 
 face_recognition_model = resource_filename(__name__, "models/dlib_face_recognition_resnet_model_v1.dat")
 face_encoder = dlib.face_recognition_model_v1(face_recognition_model)
@@ -20,8 +23,6 @@ pose_predictor_5_point = dlib.shape_predictor(predictor_5_point_model)
 predictor_68_point_model = resource_filename(__name__, "models/shape_predictor_68_face_landmarks.dat")
 pose_predictor_68_point = dlib.shape_predictor(predictor_68_point_model)
 
-cnn_face_detection_model = resource_filename(__name__, "models/mmod_human_face_detector.dat")
-cnn_face_detector = dlib.cnn_face_detection_model_v1(cnn_face_detection_model)
 
 def image_files_in_folder(folder):
     return [os.path.join(folder, f) for f in os.listdir(folder) if re.match(r'.*\.(jpg|jpeg|png)', f, flags=re.I)]
@@ -66,12 +67,13 @@ def face_locations(img, number_of_times_to_upsample=1, model="hog"):
                   deep-learning model which is GPU/CUDA accelerated (if available). The default is "hog".
     :return: A list of tuples of found face locations in css (top, right, bottom, left) order
     """
-    # if model == "cnn":
-    #     return [_trim_css_to_bounds(_rect_to_css(face.rect), img.shape) for face in _raw_face_locations(img, number_of_times_to_upsample, "cnn")]
-    # else:
+
     list_faces = []
-    for face in face_detector(img, number_of_times_to_upsample):
-        r = _rect_to_css(face)
+    for face in _raw_face_locations(img, number_of_times_to_upsample, model):
+        if model == "cnn":
+            r = _rect_to_css(face.rect)
+        else:
+            r = _rect_to_css(face)
         list_faces.append(_trim_css_to_bounds(r , img.shape))
     return list_faces 
 
@@ -88,7 +90,7 @@ def _raw_face_locations(img, number_of_times_to_upsample=1, model="hog"):
     if model == "cnn":
         return cnn_face_detector(img, number_of_times_to_upsample)
     else:
-        return face_detector(img, number_of_times_to_upsample)
+        return hog_face_detector(img, number_of_times_to_upsample)
 
 def _raw_face_landmarks(face_image, face_locations=None, model="large"):
     if face_locations is None:
