@@ -58,8 +58,7 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree
                 # Add face encoding for current image to the training set
                 X.append(face_encodings(image, known_face_locations=face_bounding_boxes)[0])
                 y.append(class_dir)
-                # print(img_path)
-                # print(X[len(X)-1])
+
 
     # Determine how many neighbors to use for weighting in the KNN classifier
     if n_neighbors is None:
