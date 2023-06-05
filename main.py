@@ -41,7 +41,8 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree
         # Loop through each training image for the current person
         for img_path in image_files_in_folder(os.path.join(train_dir, class_dir)):
             image = load_image_file(img_path)
-            face_bounding_boxes = face_locations(image, model="cnn")
+            win = dlib.image_window(image, class_dir)
+            face_bounding_boxes = face_locations(image, win=win, model="hog")
 
             if len(face_bounding_boxes) != 1:
                 # If there are no people (or too many people) in a training image, skip the image.
@@ -56,7 +57,7 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree
                     )
             else:
                 # Add face encoding for current image to the training set
-                X.append(face_encodings(image, known_face_locations=face_bounding_boxes)[0])
+                X.append(face_encodings(image, known_face_locations=face_bounding_boxes, win=win)[0])
                 y.append(class_dir)
 
 
@@ -142,9 +143,9 @@ if __name__ == "__main__":
     # Once the model is trained and saved, you can skip this step next time.
     model_name = "trained_knn_model.clf"
 
-    # print("Training KNN classifier...")
-    # classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2)
-    # print("Training complete!")
+    print("Training KNN classifier...")
+    classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2)
+    print("Training complete!")
 
     # STEP 2: Using the trained classifier, make predictions for unknown images
     for image_file in os.listdir("./test_faces"):

@@ -57,7 +57,7 @@ def _trim_css_to_bounds(css, image_shape):
     return max(css[0], 0), min(css[1], image_shape[1]), min(css[2], image_shape[0]), max(css[3], 0)
 
 
-def face_locations(img, number_of_times_to_upsample=1, model="hog"):
+def face_locations(img, number_of_times_to_upsample=1, model="hog", win=None):
     """
     Returns an array of bounding boxes of human faces in a image
 
@@ -70,6 +70,8 @@ def face_locations(img, number_of_times_to_upsample=1, model="hog"):
 
     list_faces = []
     for face in _raw_face_locations(img, number_of_times_to_upsample, model):
+        if win:
+            win.add_overlay(face)
         if model == "cnn":
             r = _rect_to_css(face.rect)
         else:
@@ -109,7 +111,7 @@ def _raw_face_landmarks(face_image, face_locations=None, model="large"):
     
     return landmarks
 
-def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="large"):
+def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="large", win=None):
     """
     Given an image, return the 128-dimension face encoding for each face in the image.
 
@@ -119,7 +121,25 @@ def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="
     :param model: Optional - which model to use. "large" or "small" (default) which only returns 5 points but is faster.
     :return: A list of 128-dimensional face encodings (one for each face in the image)
     """
+    # It should also be noted that you can also call this function like this:
+    #  face_descriptor = facerec.compute_face_descriptor(img, shape, 100, 0.25)
+    # The version of the call without the 100 gets 99.13% accuracy on LFW
+    # while the version with 100 gets 99.38%.  However, the 100 makes the
+    # call 100x slower to execute, so choose whatever version you like.  To
+    # explain a little, the 3rd argument tells the code how many times to
+    # jitter/resample the image.  When you set it to 100 it executes the
+    # face descriptor extraction 100 times on slightly modified versions of
+    # the face and returns the average result.  You could also pick a more
+    # middle value, such as 10, which is only 10x slower but still gets an
+    # LFW accuracy of 99.3%.
+    # 4th value (0.25) is padding around the face. If padding == 0 then the chip will
+    # be closely cropped around the face. Setting larger padding values will result a looser cropping.
+    # In particular, a padding of 0.5 would double the width of the cropped area, a value of 1.
+    # would triple it, and so forth.
+    
     raw_landmarks = _raw_face_landmarks(face_image, known_face_locations, model)
+    if win:
+        win.add_overlay(raw_landmarks)
     lista = []
     for raw_landmark_set in raw_landmarks:
         lista.append(np.array(face_encoder.compute_face_descriptor(face_image, raw_landmark_set, num_jitters)))        
