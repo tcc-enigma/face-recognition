@@ -75,23 +75,22 @@ for f in glob.glob(os.path.join(faces_folder_path, "*.jpg")):
     print("Number of faces detected: {}".format(len(dets)))
 
     # Now process each face we found.
-    for k, d in enumerate(dets):
+    for k, rect in enumerate(dets):
         print("Detection {}: Left: {} Top: {} Right: {} Bottom: {}".format(
-            k, d.left(), d.top(), d.right(), d.bottom()))
+            k, rect.left(), rect.top(), rect.right(), rect.bottom()))
         # Get the landmarks/parts for the face in box d.
-        shape = face_landmarks(img, d)
+        landmarks = face_landmarks(img, rect)
         # Draw the face landmarks on the screen so we can see what face is currently being processed.
         win.clear_overlay()
-        win.add_overlay(d)
-        win.add_overlay(shape)
+        win.add_overlay(rect) # Draw the rectangle
+        win.add_overlay(landmarks) # Draw the landmarks on the screen so we can see what face is currently being processed
 
         # Compute the 128D vector that describes the face in img identified by
         # shape.  In general, if two face descriptor vectors have a Euclidean
         # distance between them less than 0.6 then they are from the same
         # person, otherwise they are from different people. Here we just print
         # the vector to the screen.
-        face_descriptor = facerec.compute_face_descriptor(img, shape, 10, 0)
-        print(face_descriptor)
+        face_descriptor = facerec.compute_face_descriptor(img, landmarks, 10, 0)
         # It should also be noted that you can also call this function like this:
         #  face_descriptor = facerec.compute_face_descriptor(img, shape, 100, 0.25)
         # The version of the call without the 100 gets 99.13% accuracy on LFW
@@ -120,7 +119,7 @@ for f in glob.glob(os.path.join(faces_folder_path, "*.jpg")):
         print("Computing descriptor on aligned image ..")
         
         # Let's generate the aligned image using get_face_chip
-        face_chip = dlib.get_face_chip(img, shape)   
+        face_chip = dlib.get_face_chip(img, landmarks)   
         win2.set_image(face_chip)    
 
         # Now we simply pass this chip (aligned image) to the api
