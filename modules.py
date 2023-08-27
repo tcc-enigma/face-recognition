@@ -127,13 +127,13 @@ def _raw_face_landmarks(face_image, face_locations=None, model="large"):
     return landmarks
 
 
-def point_to_list(point):
+def _point_to_list(point):
     my_list = [point.x, point.y]
     return my_list
 
 
-def point_to_array(point):
-    return np.array(point_to_list(point))
+def _point_to_array(point):
+    return np.array(_point_to_list(point))
 
 
 def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
@@ -154,18 +154,18 @@ def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
         pose_predicted = pose_predictor(face_image, face_location)
 
         # get reference points
-        reference_eye_1 = point_to_array(pose_predicted.part(36))
-        reference_eye_2 = point_to_array(pose_predicted.part(45))
+        reference_eye_1 = _point_to_array(pose_predicted.part(36))
+        reference_eye_2 = _point_to_array(pose_predicted.part(45))
 
         # referential distance
         d = np.linalg.norm(reference_eye_1 - reference_eye_2)
 
-        origin_landmark = point_to_array(pose_predicted.part(8))  # chin landmark
+        origin_landmark = _point_to_array(pose_predicted.part(8))  # chin landmark
 
         points_list = []
         points = []
         for part in pose_predicted.parts():
-            point = point_to_array(part)
+            point = _point_to_array(part)
             X_position_relative = point[X] - origin_landmark[X]
             y_position_relative = point[Y] - origin_landmark[Y]
 
@@ -185,7 +185,16 @@ def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
     return landmarks
 
 
-def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="large", win=None):
+def _get_landmarks(*args, normalize):
+    if normalize:
+        return _normalized_face_landmarks(*args)
+    else:
+        return _raw_face_landmarks(*args)
+
+
+def face_encodings(
+    face_image, known_face_locations=None, num_jitters=1, model="large", win=None, normalize=True
+):
     """
     Given an image, return the 128-dimension face encoding for each face in the image.
 
@@ -211,15 +220,17 @@ def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="
     # In particular, a padding of 0.5 would double the width of the cropped area, a value of 1.
     # would triple it, and so forth.
 
-    landmarks = _normalized_face_landmarks(face_image, known_face_locations, model)
+    landmarks = _get_landmarks(face_image, known_face_locations, model, normalize=normalize)
+
     if win:
         win.add_overlay(landmarks)
-    lista = []
+
+    encodes = []
     for landmark_set in landmarks:
-        lista.append(
+        encodes.append(
             np.array(face_encoder.compute_face_descriptor(face_image, landmark_set, num_jitters))
         )
-    return lista
+    return encodes
 
 
 def load_image_file(file, mode="RGB"):

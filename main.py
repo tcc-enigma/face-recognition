@@ -4,8 +4,9 @@ from sklearn import neighbors
 
 from modules import *
 
+NORMALIZE = False
 
-def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree", verbose=False):
+def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree", verbose=False, normalize=True):
     """
     Trains a k-nearest neighbors classifier for face recognition.
 
@@ -57,7 +58,7 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree
                     )
             else:
                 # Add face encoding for current image to the training set
-                X.append(face_encodings(image, known_face_locations=face_bounding_boxes, win=win)[0])
+                X.append(face_encodings(image, known_face_locations=face_bounding_boxes, win=win, normalize=normalize)[0])
                 y.append(class_dir)
 
 
@@ -84,7 +85,7 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
 
-def predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6):
+def predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
     """
     Recognizes faces in given image using a trained KNN classifier
 
@@ -119,7 +120,7 @@ def predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6):
         return []
 
     # Find encodings for faces in the test iamge
-    faces_encodings = face_encodings(X_img, known_face_locations=X_face_locations)
+    faces_encodings = face_encodings(X_img, known_face_locations=X_face_locations, normalize=normalize)
 
     # Use the KNN model to find the best matches for the test face
     closest_distances = knn_clf.kneighbors(faces_encodings, n_neighbors=1)
@@ -142,9 +143,8 @@ if __name__ == "__main__":
     # STEP 1: Train the KNN classifier and save it to disk
     # Once the model is trained and saved, you can skip this step next time.
     model_name = "trained_knn_model.clf"
-
     print("Training KNN classifier...")
-    classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2)
+    classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2, normalize=NORMALIZE)
     print("Training complete!")
 
     # STEP 2: Using the trained classifier, make predictions for unknown images
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
         # Find all people in the image using a trained classifier model
         # Note: You can pass in either a classifier file name or a classifier model instance
-        predictions = predict(full_file_path, model_path=model_name, distance_threshold=0.5)
+        predictions = predict(full_file_path, model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
 
         # Print results on the console
         for name, (top, right, bottom, left) in predictions:
