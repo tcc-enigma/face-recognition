@@ -20,7 +20,9 @@ for face in faces:
     for n in range(0, n_landmarks):
         x = landmarks.part(n).x
         y = landmarks.part(n).y
-        cv2.circle(img, (x, y), 2, (0, 255, 0), -1)
+        if (n == 36 or n == 45 or n == 8):
+            cv2.putText(img, f'{n}', (x - 0, y - 10), cv2.FONT_HERSHEY_PLAIN, 0.6, (255, 0, 255), 1)
+            cv2.circle(img, (x, y), 2, (0, 255, 0), -1)
 
 # Save the image with landmarks
 cv2.imwrite(f'{n_landmarks}_landmarks.jpg', img)   

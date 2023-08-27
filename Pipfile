@@ -8,6 +8,7 @@ numpy = "*"
 pillow = "*"
 scikit-learn = "*"
 dlib = "*"
+opencv-python = "*"
 
 [dev-packages]
 

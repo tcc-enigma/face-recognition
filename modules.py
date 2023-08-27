@@ -111,6 +111,61 @@ def _raw_face_landmarks(face_image, face_locations=None, model="large"):
     
     return landmarks
 
+def point_to_list(point):
+    my_list = [point.x, point.y]
+    return my_list 
+
+def point_to_array(point):
+    return np.array(point_to_list(point))
+
+def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
+    if face_locations is None:
+        face_locations = _raw_face_locations(face_image)
+    else:
+        face_locations = [_css_to_rect(face_location) for face_location in face_locations]
+
+    # pose_predictor = pose_predictor_68_point
+
+    if model == "small":
+        pose_predictor = pose_predictor_5_point
+    elif model == "large":
+        pose_predictor = pose_predictor_68_point
+
+    landmarks = []
+    for face_location in face_locations:
+        pose_predicted = pose_predictor(face_image, face_location)
+
+        # get reference points
+        reference1 = point_to_array(pose_predicted.part(36))
+        reference2 = point_to_array(pose_predicted.part(45))
+
+        # referential distance
+        d = np.linalg.norm(reference1-reference2)
+
+        origin_landmark = point_to_array(pose_predicted.part(8)) # chin landmark
+
+        points_list = []
+        points = []
+        for part in pose_predicted.parts():
+            point = point_to_array(part)
+            positionx_relative = point[0] - origin_landmark[0] 
+            positiony_relative = point[1] - origin_landmark[1] 
+
+            positionx_relative_normalized = positionx_relative / d * 100
+            positiony_relative_normalized = positiony_relative / d * 100
+
+            point_normalized = dlib.point(x=int(positionx_relative_normalized), y=int(positiony_relative_normalized))
+            points_list.append(point_normalized)
+
+        points = dlib.points(points_list)
+
+        new_object = dlib.full_object_detection(pose_predicted.rect, points)
+        landmarks.append(new_object)
+    
+    return landmarks
+
+
+
 def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="large", win=None):
     """
     Given an image, return the 128-dimension face encoding for each face in the image.
@@ -137,12 +192,12 @@ def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="
     # In particular, a padding of 0.5 would double the width of the cropped area, a value of 1.
     # would triple it, and so forth.
     
-    raw_landmarks = _raw_face_landmarks(face_image, known_face_locations, model)
+    landmarks = _normalized_face_landmarks(face_image, known_face_locations, model)
     if win:
-        win.add_overlay(raw_landmarks)
+        win.add_overlay(landmarks)
     lista = []
-    for raw_landmark_set in raw_landmarks:
-        lista.append(np.array(face_encoder.compute_face_descriptor(face_image, raw_landmark_set, num_jitters)))        
+    for landmark_set in landmarks:
+        lista.append(np.array(face_encoder.compute_face_descriptor(face_image, landmark_set, num_jitters)))        
     return lista
 
 
