@@ -179,7 +179,8 @@ def show_prediction_labels_on_image(img_path, predictions):
         name = name.encode("UTF-8")
 
         # Draw a label with a name below the face
-        text_width, text_height = draw.textsize(name)
+        _, _, text_width, text_height = draw.textbbox((0, 0), name)
+
         draw.rectangle(((left, bottom - text_height - 10), (right, bottom)), fill=(0, 0, 255), outline=(0, 0, 255))
         draw.text((left + 6, bottom - text_height - 5), name, fill=(255, 255, 255, 255))
 
