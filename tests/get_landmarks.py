@@ -2,7 +2,7 @@ import cv2
 import dlib
 
 # Load the image
-img = cv2.imread('test_faces\\billie.jpg')
+img = cv2.imread('test_faces\\billiehd.jpg')
 
 # Initialize the detector and predictor
 detector = dlib.get_frontal_face_detector()
@@ -20,9 +20,9 @@ for face in faces:
     for n in range(0, n_landmarks):
         x = landmarks.part(n).x
         y = landmarks.part(n).y
-        if (n == 36 or n == 45 or n == 8):
-            cv2.putText(img, f'{n}', (x - 0, y - 10), cv2.FONT_HERSHEY_PLAIN, 0.6, (255, 0, 255), 1)
-            cv2.circle(img, (x, y), 2, (0, 255, 0), -1)
+        
+        cv2.putText(img, f'{n}', (x - 8, y - 10), cv2.FONT_HERSHEY_PLAIN, 1.5, (188, 73, 73), 2)
+        cv2.circle(img, (x, y), 2, (0, 255, 0), 2)
 
 # Save the image with landmarks
 cv2.imwrite(f'{n_landmarks}_landmarks.jpg', img)   

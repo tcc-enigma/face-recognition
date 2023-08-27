@@ -14,18 +14,29 @@ hog_face_detector = dlib.get_frontal_face_detector()
 cnn_face_detection_model = resource_filename(__name__, "models/mmod_human_face_detector.dat")
 cnn_face_detector = dlib.cnn_face_detection_model_v1(cnn_face_detection_model)
 
-face_recognition_model = resource_filename(__name__, "models/dlib_face_recognition_resnet_model_v1.dat")
+face_recognition_model = resource_filename(
+    __name__, "models/dlib_face_recognition_resnet_model_v1.dat"
+)
 face_encoder = dlib.face_recognition_model_v1(face_recognition_model)
 
 predictor_5_point_model = resource_filename(__name__, "models/shape_predictor_5_face_landmarks.dat")
 pose_predictor_5_point = dlib.shape_predictor(predictor_5_point_model)
 
-predictor_68_point_model = resource_filename(__name__, "models/shape_predictor_68_face_landmarks.dat")
+predictor_68_point_model = resource_filename(
+    __name__, "models/shape_predictor_68_face_landmarks.dat"
+)
 pose_predictor_68_point = dlib.shape_predictor(predictor_68_point_model)
+
+X = 0
+Y = 1
 
 
 def image_files_in_folder(folder):
-    return [os.path.join(folder, f) for f in os.listdir(folder) if re.match(r'.*\.(jpg|jpeg|png)', f, flags=re.I)]
+    return [
+        os.path.join(folder, f)
+        for f in os.listdir(folder)
+        if re.match(r".*\.(jpg|jpeg|png)", f, flags=re.I)
+    ]
 
 
 def _rect_to_css(rect):
@@ -37,6 +48,7 @@ def _rect_to_css(rect):
     """
     return rect.top(), rect.right(), rect.bottom(), rect.left()
 
+
 def _css_to_rect(css):
     """
     Convert a tuple in (top, right, bottom, left) order to a dlib `rect` object
@@ -45,6 +57,7 @@ def _css_to_rect(css):
     :return: a dlib `rect` object
     """
     return dlib.rectangle(css[3], css[0], css[1], css[2])
+
 
 def _trim_css_to_bounds(css, image_shape):
     """
@@ -76,8 +89,9 @@ def face_locations(img, number_of_times_to_upsample=1, model="hog", win=None):
             r = _rect_to_css(face.rect)
         else:
             r = _rect_to_css(face)
-        list_faces.append(_trim_css_to_bounds(r , img.shape))
-    return list_faces 
+        list_faces.append(_trim_css_to_bounds(r, img.shape))
+    return list_faces
+
 
 def _raw_face_locations(img, number_of_times_to_upsample=1, model="hog"):
     """
@@ -94,6 +108,7 @@ def _raw_face_locations(img, number_of_times_to_upsample=1, model="hog"):
     else:
         return hog_face_detector(img, number_of_times_to_upsample)
 
+
 def _raw_face_landmarks(face_image, face_locations=None, model="large"):
     if face_locations is None:
         face_locations = _raw_face_locations(face_image)
@@ -108,15 +123,18 @@ def _raw_face_landmarks(face_image, face_locations=None, model="large"):
         pose_predictor = pose_predictor_68_point
 
     landmarks = [pose_predictor(face_image, face_location) for face_location in face_locations]
-    
+
     return landmarks
+
 
 def point_to_list(point):
     my_list = [point.x, point.y]
-    return my_list 
+    return my_list
+
 
 def point_to_array(point):
     return np.array(point_to_list(point))
+
 
 def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
     if face_locations is None:
@@ -136,34 +154,35 @@ def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
         pose_predicted = pose_predictor(face_image, face_location)
 
         # get reference points
-        reference1 = point_to_array(pose_predicted.part(36))
-        reference2 = point_to_array(pose_predicted.part(45))
+        reference_eye_1 = point_to_array(pose_predicted.part(36))
+        reference_eye_2 = point_to_array(pose_predicted.part(45))
 
         # referential distance
-        d = np.linalg.norm(reference1-reference2)
+        d = np.linalg.norm(reference_eye_1 - reference_eye_2)
 
-        origin_landmark = point_to_array(pose_predicted.part(8)) # chin landmark
+        origin_landmark = point_to_array(pose_predicted.part(8))  # chin landmark
 
         points_list = []
         points = []
         for part in pose_predicted.parts():
             point = point_to_array(part)
-            positionx_relative = point[0] - origin_landmark[0] 
-            positiony_relative = point[1] - origin_landmark[1] 
+            X_position_relative = point[X] - origin_landmark[X]
+            y_position_relative = point[Y] - origin_landmark[Y]
 
-            positionx_relative_normalized = positionx_relative / d * 100
-            positiony_relative_normalized = positiony_relative / d * 100
+            x_position_relative_normalized = X_position_relative / d * 100
+            y_position_relative_normalized = y_position_relative / d * 100
 
-            point_normalized = dlib.point(x=int(positionx_relative_normalized), y=int(positiony_relative_normalized))
+            point_normalized = dlib.point(
+                x=int(x_position_relative_normalized), y=int(y_position_relative_normalized)
+            )
             points_list.append(point_normalized)
 
         points = dlib.points(points_list)
 
-        new_object = dlib.full_object_detection(pose_predicted.rect, points)
-        landmarks.append(new_object)
-    
-    return landmarks
+        face = dlib.full_object_detection(pose_predicted.rect, points)
+        landmarks.append(face)
 
+    return landmarks
 
 
 def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="large", win=None):
@@ -191,17 +210,19 @@ def face_encodings(face_image, known_face_locations=None, num_jitters=1, model="
     # be closely cropped around the face. Setting larger padding values will result a looser cropping.
     # In particular, a padding of 0.5 would double the width of the cropped area, a value of 1.
     # would triple it, and so forth.
-    
+
     landmarks = _normalized_face_landmarks(face_image, known_face_locations, model)
     if win:
         win.add_overlay(landmarks)
     lista = []
     for landmark_set in landmarks:
-        lista.append(np.array(face_encoder.compute_face_descriptor(face_image, landmark_set, num_jitters)))        
+        lista.append(
+            np.array(face_encoder.compute_face_descriptor(face_image, landmark_set, num_jitters))
+        )
     return lista
 
 
-def load_image_file(file, mode='RGB'):
+def load_image_file(file, mode="RGB"):
     """
     Loads an image file (.jpg, .png, etc) into a numpy array
 
@@ -213,6 +234,7 @@ def load_image_file(file, mode='RGB'):
     if mode:
         im = im.convert(mode)
     return np.array(im)
+
 
 def show_prediction_labels_on_image(img_path, predictions):
     """
@@ -236,7 +258,11 @@ def show_prediction_labels_on_image(img_path, predictions):
         # Draw a label with a name below the face
         _, _, text_width, text_height = draw.textbbox((0, 0), name)
 
-        draw.rectangle(((left, bottom - text_height - 10), (right, bottom)), fill=(0, 0, 255), outline=(0, 0, 255))
+        draw.rectangle(
+            ((left, bottom - text_height - 10), (right, bottom)),
+            fill=(0, 0, 255),
+            outline=(0, 0, 255),
+        )
         draw.text((left + 6, bottom - text_height - 5), name, fill=(255, 255, 255, 255))
 
     # Remove the drawing library from memory as per the Pillow docs
