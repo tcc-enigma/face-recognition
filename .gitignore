@@ -161,4 +161,4 @@ cython_debug/
 
 base/
 .vscode/
-.clf
+*.clf

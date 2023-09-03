@@ -84,8 +84,37 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
+def validate_predict(test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
+    # Loop through each person in the training set
+    for class_dir in os.listdir(test_dir):
+        if not os.path.isdir(os.path.join(test_dir, class_dir)):
+            continue
 
-def predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
+        # Loop through each training image for the current person
+        for img_path in image_files_in_folder(os.path.join(test_dir, class_dir)):
+           prediction = _predict(img_path, knn_clf=knn_clf, model_path=model_path, distance_threshold=distance_threshold, normalize=normalize)
+           if class_dir != prediction[0][0]:
+               ...
+
+def predict(test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
+    # STEP 2: Using the trained classifier, make predictions for unknown images
+    for image_file in os.listdir(test_dir):
+        full_file_path = os.path.join(test_dir, image_file)
+
+        print("Looking for faces in {}".format(image_file))
+
+        # Find all people in the image using a trained classifier model
+        # Note: You can pass in either a classifier file name or a classifier model instance
+        predictions = _predict(full_file_path, model_path=model_path, distance_threshold=distance_threshold, normalize=normalize)
+
+        # Print results on the console
+        for name, (top, right, bottom, left) in predictions:
+            print("- Found {} at ({}, {})".format(name, left, top))
+
+        # Display results overlaid on an image
+        show_prediction_labels_on_image(os.path.join(test_dir, image_file), predictions)
+
+def _predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
     """
     Recognizes faces in given image using a trained KNN classifier
 
@@ -136,6 +165,7 @@ def predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, n
             prediction.append((pred, loc))
         else:
             prediction.append(("unknown", loc))
+
     return prediction
 
 
@@ -147,19 +177,6 @@ if __name__ == "__main__":
     classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2, normalize=NORMALIZE)
     print("Training complete!")
 
-    # STEP 2: Using the trained classifier, make predictions for unknown images
-    for image_file in os.listdir("./test_faces"):
-        full_file_path = os.path.join("./test_faces", image_file)
+    validate_predict("./validate_test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
 
-        print("Looking for faces in {}".format(image_file))
-
-        # Find all people in the image using a trained classifier model
-        # Note: You can pass in either a classifier file name or a classifier model instance
-        predictions = predict(full_file_path, model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
-
-        # Print results on the console
-        for name, (top, right, bottom, left) in predictions:
-            print("- Found {} at ({}, {})".format(name, left, top))
-
-        # Display results overlaid on an image
-        show_prediction_labels_on_image(os.path.join("./test_faces", image_file), predictions)
+    # predict("./test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
