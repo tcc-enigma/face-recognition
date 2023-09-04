@@ -110,6 +110,10 @@ def train(
 def validate_predict(
     test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True
 ):
+    
+    y_pred =[]
+    y_true = []
+
     # Loop through each person in the training set
     for class_name in os.listdir(test_dir):
         if not os.path.isdir(os.path.join(test_dir, class_name)):
@@ -124,7 +128,10 @@ def validate_predict(
                 distance_threshold=distance_threshold,
                 normalize=normalize,
             )
-            confusion_matrix(predictions, class_name)
+            y_pred.append(predictions[0][CLASS_NAME])
+            y_true.append(class_name)
+    
+    confusion_matrix(y_true, y_pred)
 
 # def confusion_matrix(predictions, class_name):
 #     cm = confusion_matrix([class_name], [name for name, (top, right, bottom, left) in predictions])
