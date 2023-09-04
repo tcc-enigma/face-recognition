@@ -1,12 +1,29 @@
 import os
 
 from sklearn import neighbors
+from sklearn.metrics import confusion_matrix
+import pandas as pd
 
 from modules import *
 
 NORMALIZE = False
+CLASS_NAME = 0
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
-def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree", verbose=False, normalize=True):
+tp = 0
+fp = 0
+fn = 0
+tn = 0
+
+
+def train(
+    train_dir,
+    model_save_path=None,
+    n_neighbors=None,
+    knn_algo="ball_tree",
+    verbose=False,
+    normalize=True,
+):
     """
     Trains a k-nearest neighbors classifier for face recognition.
 
@@ -58,9 +75,15 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree
                     )
             else:
                 # Add face encoding for current image to the training set
-                X.append(face_encodings(image, known_face_locations=face_bounding_boxes, win=win, normalize=normalize)[0])
+                X.append(
+                    face_encodings(
+                        image,
+                        known_face_locations=face_bounding_boxes,
+                        win=win,
+                        normalize=normalize,
+                    )[0]
+                )
                 y.append(class_dir)
-
 
     # Determine how many neighbors to use for weighting in the KNN classifier
     if n_neighbors is None:
@@ -82,19 +105,29 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo="ball_tree
     return knn_clf
 
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
-def validate_predict(test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
+
+def validate_predict(
+    test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True
+):
     # Loop through each person in the training set
-    for class_dir in os.listdir(test_dir):
-        if not os.path.isdir(os.path.join(test_dir, class_dir)):
+    for class_name in os.listdir(test_dir):
+        if not os.path.isdir(os.path.join(test_dir, class_name)):
             continue
 
         # Loop through each training image for the current person
-        for img_path in image_files_in_folder(os.path.join(test_dir, class_dir)):
-           prediction = _predict(img_path, knn_clf=knn_clf, model_path=model_path, distance_threshold=distance_threshold, normalize=normalize)
-           if class_dir != prediction[0][0]:
-               ...
+        for img_path in image_files_in_folder(os.path.join(test_dir, class_name)):
+            predictions = _predict(
+                img_path,
+                knn_clf=knn_clf,
+                model_path=model_path,
+                distance_threshold=distance_threshold,
+                normalize=normalize,
+            )
+            confusion_matrix(predictions, class_name)
+
+# def confusion_matrix(predictions, class_name):
+#     cm = confusion_matrix([class_name], [name for name, (top, right, bottom, left) in predictions])
 
 def predict(test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
     # STEP 2: Using the trained classifier, make predictions for unknown images
@@ -105,7 +138,12 @@ def predict(test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, nor
 
         # Find all people in the image using a trained classifier model
         # Note: You can pass in either a classifier file name or a classifier model instance
-        predictions = _predict(full_file_path, model_path=model_path, distance_threshold=distance_threshold, normalize=normalize)
+        predictions = _predict(
+            full_file_path,
+            model_path=model_path,
+            distance_threshold=distance_threshold,
+            normalize=normalize,
+        )
 
         # Print results on the console
         for name, (top, right, bottom, left) in predictions:
@@ -113,6 +151,7 @@ def predict(test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, nor
 
         # Display results overlaid on an image
         show_prediction_labels_on_image(os.path.join(test_dir, image_file), predictions)
+
 
 def _predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
     """
@@ -149,7 +188,9 @@ def _predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, 
         return []
 
     # Find encodings for faces in the test iamge
-    faces_encodings = face_encodings(X_img, known_face_locations=X_face_locations, normalize=normalize)
+    faces_encodings = face_encodings(
+        X_img, known_face_locations=X_face_locations, normalize=normalize
+    )
 
     # Use the KNN model to find the best matches for the test face
     closest_distances = knn_clf.kneighbors(faces_encodings, n_neighbors=1)
@@ -174,9 +215,13 @@ if __name__ == "__main__":
     # Once the model is trained and saved, you can skip this step next time.
     model_name = "trained_knn_model.clf"
     print("Training KNN classifier...")
-    classifier = train("./train_faces", model_save_path=model_name, n_neighbors=2, normalize=NORMALIZE)
+    classifier = train(
+        "./train_faces", model_save_path=model_name, n_neighbors=2, normalize=NORMALIZE
+    )
     print("Training complete!")
 
-    validate_predict("./validate_test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
+    validate_predict(
+        "./validate_test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE
+    )
 
     # predict("./test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
