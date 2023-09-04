@@ -3,6 +3,8 @@ import os
 from sklearn import neighbors
 from sklearn.metrics import confusion_matrix
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from modules import *
 
@@ -131,7 +133,17 @@ def validate_predict(
             y_pred.append(predictions[0][CLASS_NAME])
             y_true.append(class_name)
     
-    confusion_matrix(y_true, y_pred)
+    classes = list(set(y_true))
+    cm = confusion_matrix(y_true, y_pred)
+    cm_df = pd.DataFrame(cm, index=classes, columns=classes)
+
+    #Plotting the confusion matrix
+    plt.figure(figsize=(5,4))
+    sns.heatmap(cm_df, annot=True)
+    plt.title('Confusion Matrix')
+    plt.ylabel('Actal Values')
+    plt.xlabel('Predicted Values')
+    plt.show()
 
 # def confusion_matrix(predictions, class_name):
 #     cm = confusion_matrix([class_name], [name for name, (top, right, bottom, left) in predictions])

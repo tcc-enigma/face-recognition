@@ -9,6 +9,9 @@ pillow = "*"
 scikit-learn = "*"
 dlib = "*"
 opencv-python = "*"
+pandas = "*"
+seaborn = "*"
+matplotlib = "*"
 
 [dev-packages]
 
