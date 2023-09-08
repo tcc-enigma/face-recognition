@@ -5,12 +5,14 @@ from sklearn.metrics import confusion_matrix
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from modules import *
 
 NORMALIZE = False
 CLASS_NAME = 0
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+CF_FOLDER = "confusion_matrix/"
 
 tp = 0
 fp = 0
@@ -107,13 +109,10 @@ def train(
     return knn_clf
 
 
-
-
 def validate_predict(
     test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True
 ):
-    
-    y_pred =[]
+    y_pred = []
     y_true = []
 
     # Loop through each person in the training set
@@ -132,21 +131,29 @@ def validate_predict(
             )
             y_pred.append(predictions[0][CLASS_NAME])
             y_true.append(class_name)
-    
-    classes = list(set(y_true))
+
+    classes = list(dict.fromkeys(y_true).keys())
     cm = confusion_matrix(y_true, y_pred)
     cm_df = pd.DataFrame(cm, index=classes, columns=classes)
 
-    #Plotting the confusion matrix
-    plt.figure(figsize=(5,4))
+    # Plotting the confusion matrix
+    plt.figure(figsize=(5, 4))
     sns.heatmap(cm_df, annot=True)
-    plt.title('Confusion Matrix')
-    plt.ylabel('Actal Values')
-    plt.xlabel('Predicted Values')
-    plt.show()
+    plt.title("Confusion Matrix")
+    plt.ylabel("Actual Values")
+    plt.xlabel("Predicted Values")
+    # Rotate x-axis labels by 45 degrees and set font size
+    plt.xticks(rotation=0, fontsize=6)
+    # Rotate y-axis labels by 45 degrees and set font size
+    plt.yticks(rotation=90, fontsize=6)
 
-# def confusion_matrix(predictions, class_name):
-#     cm = confusion_matrix([class_name], [name for name, (top, right, bottom, left) in predictions])
+    # get current datetime and format
+    dt_stringnow = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    # save plot
+    normalized = "_normalized" if NORMALIZE else ""
+    plt.savefig(f"{CF_FOLDER}cf_{dt_stringnow}_{distance_threshold}{normalized}.png", dpi=300)
+    # plt.show()
+
 
 def predict(test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
     # STEP 2: Using the trained classifier, make predictions for unknown images
@@ -232,15 +239,30 @@ def _predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, 
 if __name__ == "__main__":
     # STEP 1: Train the KNN classifier and save it to disk
     # Once the model is trained and saved, you can skip this step next time.
+
     model_name = "trained_knn_model.clf"
+    train_dir = "./train_faces"
+    predict_dir = "./validate_test_faces"
+
+    # create folder confusion_matrix if not exists
+    if not os.path.exists(CF_FOLDER):
+        os.makedirs(CF_FOLDER)
+
     print("Training KNN classifier...")
-    classifier = train(
-        "./train_faces", model_save_path=model_name, n_neighbors=2, normalize=NORMALIZE
-    )
+    classifier = train(train_dir, model_save_path=model_name, n_neighbors=2, normalize=NORMALIZE)
     print("Training complete!")
 
+    print("Validating classifier...")
     validate_predict(
-        "./validate_test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE
-    )
+            predict_dir, model_path=model_name, distance_threshold=0.6, normalize=NORMALIZE
+        )
+    # # range 0.1 to 1.0
+    # for i in range(1, 10):
+    #     threshold = i / 10
+    #     print(f"Distance threshold: {threshold}")
+    #     validate_predict(
+    #         predict_dir, model_path=model_name, distance_threshold=threshold, normalize=NORMALIZE
+    #     )
 
     # predict("./test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
+    print("Validation complete!")
