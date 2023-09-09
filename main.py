@@ -1,11 +1,11 @@
 import os
+from datetime import datetime
 
-from sklearn import neighbors
-from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-from datetime import datetime
+from sklearn import neighbors
+from sklearn.metrics import confusion_matrix
 
 from modules import *
 
@@ -220,10 +220,12 @@ def _predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, 
 
     # Use the KNN model to find the best matches for the test face
     closest_distances = knn_clf.kneighbors(faces_encodings, n_neighbors=1)
+
     # Mark as False classifications that aren't within the threshold
-    are_matches = [
-        closest_distances[0][i][0] <= distance_threshold for i in range(len(X_face_locations))
-    ]
+    are_matches = []
+    for i in range(len(X_face_locations)):
+        distance = closest_distances[0][i][0]
+        are_matches.append(distance <= distance_threshold)
 
     # Predict classes and remove classifications that aren't within the threshold
     prediction = []
@@ -254,10 +256,11 @@ if __name__ == "__main__":
 
     print("Validating classifier...")
     validate_predict(
-            predict_dir, model_path=model_name, distance_threshold=0.6, normalize=NORMALIZE
-        )
+        predict_dir, model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE
+    )
+
     # # range 0.1 to 1.0
-    # for i in range(1, 10):
+    # for i in range(0, 11):
     #     threshold = i / 10
     #     print(f"Distance threshold: {threshold}")
     #     validate_predict(
