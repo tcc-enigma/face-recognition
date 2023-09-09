@@ -15,12 +15,6 @@ CLASS_NAME = 0
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 PLOT_FOLDER = "plots/"
 
-tp = 0
-fp = 0
-fn = 0
-tn = 0
-
-
 def train(
     train_dir,
     model_save_path=None,
@@ -129,8 +123,13 @@ def train(
 
     plt.xlabel('PCA Feature 1')
     plt.ylabel('PCA Feature 2')
-    plt.title('KNN Scatter Plot (PCA)')
-    normalized = "_normalized" if NORMALIZE else ""
+    if NORMALIZE:
+        normalized = "_normalized"
+        title = "KNN Scatter Plot (PCA) Normalized"
+    else:
+        normalized = ""
+        title = "KNN Scatter Plot (PCA)"
+    plt.title(title)
     dt_stringnow = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     plt.savefig(f"{SAVE_FOLDER}knn_scatter_{dt_stringnow}{normalized}.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
@@ -282,8 +281,8 @@ if __name__ == "__main__":
     # create folder plots if not exists
     if not os.path.exists(PLOT_FOLDER):
         os.makedirs(PLOT_FOLDER)
-    
-    SAVE_FOLDER = f"{PLOT_FOLDER}{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}/"
+    normalized = "_normalized" if NORMALIZE else ""
+    SAVE_FOLDER = f"{PLOT_FOLDER}{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}{normalized}/"
     os.makedirs(SAVE_FOLDER)
 
     print("Training KNN classifier...")

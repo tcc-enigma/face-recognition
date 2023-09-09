@@ -151,20 +151,20 @@ def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
 
     landmarks = []
     for face_location in face_locations:
-        pose_predicted = pose_predictor(face_image, face_location)
+        raw_landmarks = pose_predictor(face_image, face_location)
 
         # get reference points
-        reference_eye_1 = _point_to_array(pose_predicted.part(36))
-        reference_eye_2 = _point_to_array(pose_predicted.part(45))
+        reference_eye_1 = _point_to_array(raw_landmarks.part(36))
+        reference_eye_2 = _point_to_array(raw_landmarks.part(45))
 
         # referential distance
         d = np.linalg.norm(reference_eye_1 - reference_eye_2)
 
-        origin_landmark = _point_to_array(pose_predicted.part(8))  # chin landmark
+        origin_landmark = _point_to_array(raw_landmarks.part(8))  # chin landmark
 
         points_list = []
         points = []
-        for part in pose_predicted.parts():
+        for part in raw_landmarks.parts():
             point = _point_to_array(part)
             X_position_relative = point[X] - origin_landmark[X]
             y_position_relative = point[Y] - origin_landmark[Y]
@@ -179,7 +179,7 @@ def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
 
         points = dlib.points(points_list)
 
-        face = dlib.full_object_detection(pose_predicted.rect, points)
+        face = dlib.full_object_detection(raw_landmarks.rect, points)
         landmarks.append(face)
 
     return landmarks
