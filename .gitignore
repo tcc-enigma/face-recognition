@@ -162,4 +162,4 @@ cython_debug/
 base/
 .vscode/
 *.clf
-confusion_matrix/
+plots/

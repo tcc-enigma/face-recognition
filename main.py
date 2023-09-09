@@ -6,13 +6,14 @@ import pandas as pd
 import seaborn as sns
 from sklearn import neighbors
 from sklearn.metrics import confusion_matrix
+from sklearn.decomposition import PCA
 
 from modules import *
 
 NORMALIZE = False
 CLASS_NAME = 0
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
-CF_FOLDER = "confusion_matrix/"
+PLOT_FOLDER = "plots/"
 
 tp = 0
 fp = 0
@@ -101,6 +102,38 @@ def train(
     # fit data into knn model
     knn_clf.fit(X, y)
 
+    # Assuming you have a NumPy array X with shape (n_samples, n_features)
+    # and a list of class labels y with length n_samples
+    # Create a PCA object with 2 components
+    pca = PCA(n_components=2)
+
+    # Fit the PCA object to the data and transform the data to the 2-dimensional space
+    X_2d = pca.fit_transform(X)
+
+    # Define a colormap to map class labels to colors
+    cmap = plt.get_cmap('viridis')
+    colors = [cmap(i) for i in np.linspace(0, 1, len(np.unique(y)))]
+
+    # Map each class label to a color
+    color_map = dict(zip(np.unique(y), colors))
+    c = [color_map[label] for label in y]
+
+    # Plot a scatter of the transformed data with each sample colored according to its class
+    plt.scatter(X_2d[:, 0], X_2d[:, 1], c=c)
+
+    # Add a legend to the plot
+    handles = [plt.plot([],[],color=color_map[label], marker="o", ls="", mec="k", mew=0.5, label=label.replace('_', ' '))[0] for label in np.unique(y)]
+    plt.legend(handles=handles, title="Class", bbox_to_anchor=(1.05, 1), loc='upper left')
+    # Adjust the figure size to include the legend
+    # plt.subplots_adjust(right=0.8)
+
+    plt.xlabel('PCA Feature 1')
+    plt.ylabel('PCA Feature 2')
+    plt.title('KNN Scatter Plot (PCA)')
+    normalized = "_normalized" if NORMALIZE else ""
+    dt_stringnow = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    plt.savefig(f"{SAVE_FOLDER}knn_scatter_{dt_stringnow}{normalized}.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+
     # Save the trained KNN classifier
     if model_save_path is not None:
         with open(model_save_path, "wb") as f:
@@ -151,7 +184,7 @@ def validate_predict(
     dt_stringnow = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     # save plot
     normalized = "_normalized" if NORMALIZE else ""
-    plt.savefig(f"{CF_FOLDER}cf_{dt_stringnow}_{distance_threshold}{normalized}.png", dpi=300)
+    plt.savefig(f"{SAVE_FOLDER}cf_{dt_stringnow}_{distance_threshold}{normalized}.png", dpi=300)
     # plt.show()
 
 
@@ -246,9 +279,12 @@ if __name__ == "__main__":
     train_dir = "./train_faces"
     predict_dir = "./validate_test_faces"
 
-    # create folder confusion_matrix if not exists
-    if not os.path.exists(CF_FOLDER):
-        os.makedirs(CF_FOLDER)
+    # create folder plots if not exists
+    if not os.path.exists(PLOT_FOLDER):
+        os.makedirs(PLOT_FOLDER)
+    
+    SAVE_FOLDER = f"{PLOT_FOLDER}{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}/"
+    os.makedirs(SAVE_FOLDER)
 
     print("Training KNN classifier...")
     classifier = train(train_dir, model_save_path=model_name, n_neighbors=2, normalize=NORMALIZE)
