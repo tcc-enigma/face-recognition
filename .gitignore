@@ -163,3 +163,4 @@ base/
 .vscode/
 *.clf
 plots/
+data/data_faces_from_camera

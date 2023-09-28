@@ -275,8 +275,8 @@ if __name__ == "__main__":
     # Once the model is trained and saved, you can skip this step next time.
 
     model_name = "trained_knn_model.clf"
-    train_dir = "./train_faces"
-    predict_dir = "./validate_test_faces"
+    train_dir = ".data/train_faces"
+    predict_dir = ".data/validate_test_faces"
 
     # create folder plots if not exists
     if not os.path.exists(PLOT_FOLDER):
@@ -302,5 +302,5 @@ if __name__ == "__main__":
     #         predict_dir, model_path=model_name, distance_threshold=threshold, normalize=NORMALIZE
     #     )
 
-    # predict("./test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
+    # predict(".data/test_faces", model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
     print("Validation complete!")
