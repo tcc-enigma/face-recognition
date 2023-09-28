@@ -275,8 +275,8 @@ if __name__ == "__main__":
     # Once the model is trained and saved, you can skip this step next time.
 
     model_name = "trained_knn_model.clf"
-    train_dir = ".data/train_faces"
-    predict_dir = ".data/validate_test_faces"
+    train_dir = "data/train_faces"
+    predict_dir = "data/validate_test_faces"
 
     # create folder plots if not exists
     if not os.path.exists(PLOT_FOLDER):

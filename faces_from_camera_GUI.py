@@ -125,16 +125,16 @@ class Face_Register:
 
         self.label_warning.grid(row=4, column=0, columnspan=3, sticky=tk.W, padx=5, pady=2)
 
-        # Step 1: Clear old data
-        tk.Label(self.frame_right_info, font=self.font_step_title, text="Step 1: Clear face photos").grid(
+        # Clear old data
+        tk.Label(self.frame_right_info, font=self.font_step_title, text="Clear folders").grid(
             row=5, column=0, columnspan=2, sticky=tk.W, padx=5, pady=20
         )
         tk.Button(self.frame_right_info, text="Clear", command=self.GUI_clear_data).grid(
             row=6, column=0, columnspan=3, sticky=tk.W, padx=5, pady=2
         )
 
-        # Step 2: Input name and create folders for face
-        tk.Label(self.frame_right_info, font=self.font_step_title, text="Step 2: Input name").grid(
+        # Input name and create folders for face
+        tk.Label(self.frame_right_info, font=self.font_step_title, text="Input name").grid(
             row=7, column=0, columnspan=2, sticky=tk.W, padx=5, pady=20
         )
 
@@ -143,8 +143,8 @@ class Face_Register:
 
         tk.Button(self.frame_right_info, text="Input", command=self.GUI_get_input_name).grid(row=8, column=2, padx=5)
 
-        # Step 3: Save current face in frame
-        tk.Label(self.frame_right_info, font=self.font_step_title, text="Step 3: Save face image").grid(
+        # Save current face in frame
+        tk.Label(self.frame_right_info, font=self.font_step_title, text="Save face image").grid(
             row=9, column=0, columnspan=2, sticky=tk.W, padx=5, pady=20
         )
 
@@ -222,8 +222,6 @@ class Face_Register:
                     self.log_all["text"] = "Please do not out of range!"
             else:
                 self.log_all["text"] = "No face in current frame!"
-        else:
-            self.log_all["text"] = "Please run step 2!"
 
     def get_frame(self):
         try:

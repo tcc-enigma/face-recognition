@@ -164,3 +164,4 @@ base/
 *.clf
 plots/
 data/data_faces_from_camera
+data/faces_features.csv
