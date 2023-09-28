@@ -1,13 +1,3 @@
-# Copyright (C) 2018-2021 coneypo
-# SPDX-License-Identifier: MIT
-
-# Author:   coneypo
-# Blog:     http://www.cnblogs.com/AdaminXie
-# GitHub:   https://github.com/coneypo/Dlib_face_recognition_from_camera
-# Mail:     coneypo@foxmail.com
-
-# 人脸录入 Tkinter GUI / Face register GUI with tkinter
-
 import dlib
 import numpy as np
 import cv2
@@ -19,7 +9,7 @@ import tkinter as tk
 from tkinter import font as tkFont
 from PIL import Image, ImageTk
 
-# Dlib 正向人脸检测器 / Use frontal face detector of Dlib
+# Use frontal face detector of Dlib
 detector = dlib.get_frontal_face_detector()
 
 PATH_CAMERA_FACE = "data/data_faces_from_camera/"
@@ -94,7 +84,7 @@ class Face_Register:
         if os.path.isfile("data/features_all.csv"):
             os.remove("data/features_all.csv")
 
-        self.label_cnt_face_in_database["text"] = '0'
+        self.label_cnt_face_in_database["text"] = "0"
         self.log_all["text"] = "Face images and `features_all.csv` removed!"
 
     def GUI_get_input_name(self):
@@ -102,7 +92,7 @@ class Face_Register:
             return
         self.input_name_char = self.input_name.get()
         self.create_face_folder()
-        self.cnt_face_folders+=1
+        self.cnt_face_folders += 1
         self.label_cnt_face_in_database["text"] = self.cnt_face_folders
 
     def GUI_info(self):
@@ -212,12 +202,7 @@ class Face_Register:
                         self.current_face_dir + IMG_FACE_PREFIX + str(self.ss_cnt) + ".jpg",
                         self.face_ROI_image,
                     )
-                    logging.info(
-                        "%-40s %s/img_face_%s.jpg",
-                        "Save into：",
-                        str(self.current_face_dir),
-                        str(self.ss_cnt)
-                    )
+                    logging.info("%-40s %s/img_face_%s.jpg", "Save into：", str(self.current_face_dir), str(self.ss_cnt))
                 else:
                     self.log_all["text"] = "Please do not out of range!"
             else:

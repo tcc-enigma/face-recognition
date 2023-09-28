@@ -1,13 +1,3 @@
-# Copyright (C) 2018-2021 coneypo
-# SPDX-License-Identifier: MIT
-
-# Author:   coneypo
-# Blog:     http://www.cnblogs.com/AdaminXie
-# GitHub:   https://github.com/coneypo/Dlib_face_recognition_from_camera
-# Mail:     coneypo@foxmail.com
-
-# 从人脸图像文件中提取人脸特征存入 "features_all.csv" / Extract features from images and save into "features_all.csv"
-
 import os
 import dlib
 import csv
@@ -18,7 +8,7 @@ import cv2
 # Path of cropped faces
 PATH_CAMERA_FACE = "data/data_faces_from_camera/"
 
-# Dlib 正向人脸检测器 / Use frontal face detector of Dlib
+# Use frontal face detector of Dlib
 face_detector = dlib.get_frontal_face_detector()
 cnn_face_detector = dlib.cnn_face_detection_model_v1("models/mmod_human_face_detector.dat")
 
@@ -39,7 +29,6 @@ def return_128d_features(path_img):
 
     logging.info("%-40s %-20s", "Image with faces detected:", path_img)
 
-    # 因为有可能截下来的人脸再去检测，检测不出来人脸了, 所以要确保是 检测到人脸的人脸图像拿去算特征
     # For photos of faces saved, we need to make sure that we can detect faces from the cropped images
     if len(faces) != 0:
         shape = pose_predictor_68_point(img_rd, faces[0])
@@ -67,7 +56,6 @@ def return_features_mean_person(path_face_person):
         logging.warning("Warning: No images in %s/", path_face_person)
 
     # Compute the mean
-    # personX 的 N 张图像 x 128D -> 1 x 128D
     if features_list_person:
         # Original code
         # features_mean_personX = np.array(features_list_person, dtype=object).mean(axis=0)
