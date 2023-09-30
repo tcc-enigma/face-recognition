@@ -5,14 +5,15 @@ import os
 import pandas as pd
 import time
 import logging
+from modules import face_encodings
+
+from constants import *
 
 face_detector = dlib.get_frontal_face_detector()
 
 pose_predictor_68_point = dlib.shape_predictor("models/shape_predictor_68_face_landmarks.dat")
 
 face_encoder = dlib.face_recognition_model_v1("models/dlib_face_recognition_resnet_model_v1.dat")
-
-PATH_CSV = "data/faces_features.csv"
 
 
 class Face_Recognizer:
@@ -230,9 +231,13 @@ class Face_Recognizer:
                         logging.debug("  scene 2.2 Get faces in this frame and do face recognition")
                         self.current_frame_face_name_list = []
                         for i in range(len(faces)):
-                            shape = pose_predictor_68_point(img_rd, faces[i])
+                            # shape = pose_predictor_68_point(img_rd, faces[i])
                             self.current_frame_face_feature_list.append(
-                                face_encoder.compute_face_descriptor(img_rd, shape)
+                                face_encodings(
+                                    img_rd,
+                                    known_face_locations=faces,
+                                    normalize=NORMALIZE,
+                                )[i]
                             )
                             self.current_frame_face_name_list.append("unknown")
 

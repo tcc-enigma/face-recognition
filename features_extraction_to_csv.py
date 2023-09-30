@@ -4,10 +4,9 @@ import csv
 import numpy as np
 import logging
 import cv2
+from modules import face_encodings
 
-# Path of cropped faces
-PATH_CAMERA_FACE = "data/data_faces_from_camera/"
-PATH_CSV = "data/faces_features.csv"
+from constants import *
 
 # Use frontal face detector of Dlib
 face_detector = dlib.get_frontal_face_detector()
@@ -28,14 +27,17 @@ def return_128d_features(path_img):
     img_rd = cv2.imread(path_img)
     faces = face_detector(img_rd, 1)
 
-    logging.info("%-40s %-20s", "Image with faces detected:", path_img)
+    # logging.info("%-40s %-20s", "Image with faces detected:", path_img)
 
     # For photos of faces saved, we need to make sure that we can detect faces from the cropped images
     if len(faces) != 0:
-        shape = pose_predictor_68_point(img_rd, faces[0])
-        face_descriptor = face_encoder.compute_face_descriptor(img_rd, shape)
+        face_descriptor = face_encodings(
+            img_rd,
+            known_face_locations=faces,
+            normalize=NORMALIZE,
+        )[0]
     else:
-        face_descriptor = 0
+        face_descriptor = None
         logging.warning("no face")
     return face_descriptor
 
@@ -51,7 +53,7 @@ def return_features_mean_person(path_face_person):
             # Get 128D features for single image of personX
             logging.info("%-40s %-20s", "Reading image:", path_face_person + "/" + photos_list[i])
             features_128d = return_128d_features(path_face_person + "/" + photos_list[i])
-            if features_128d:
+            if features_128d is not None:
                 features_list_person.append(features_128d)
     else:
         logging.warning("Warning: No images in %s/", path_face_person)

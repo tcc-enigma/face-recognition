@@ -6,16 +6,10 @@ from sklearn import neighbors
 from sklearn.decomposition import PCA
 
 from modules import *
-
-NORMALIZE = False
-CLASS_NAME = 0
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
-PLOT_FOLDER = "plots/"
-
+from constants import *
 
 def plot(
     face_dir,
-    normalize=NORMALIZE,
 ):
     """
     Trains a k-nearest neighbors classifier for face recognition.
@@ -62,7 +56,7 @@ def plot(
                         image,
                         known_face_locations=face_bounding_boxes,
                         win=win,
-                        normalize=normalize,
+                        normalize=NORMALIZE,
                     )[0]
                 )
                 y.append(class_dir)

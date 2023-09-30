@@ -9,11 +9,11 @@ from sklearn.metrics import confusion_matrix
 from sklearn.decomposition import PCA
 
 from modules import *
+from constants import *
 
-NORMALIZE = False
 CLASS_NAME = 0
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
-PLOT_FOLDER = "plots/"
+
 
 def train(
     train_dir,
@@ -67,9 +67,7 @@ def train(
                     print(
                         "Image {} not suitable for training: {}".format(
                             img_path,
-                            "Didn't find a face"
-                            if len(face_bounding_boxes) < 1
-                            else "Found more than one face",
+                            "Didn't find a face" if len(face_bounding_boxes) < 1 else "Found more than one face",
                         )
                     )
             else:
@@ -90,9 +88,7 @@ def train(
         if verbose:
             print("Chose n_neighbors automatically:", n_neighbors)
     # Create and train the KNN classifier
-    knn_clf = neighbors.KNeighborsClassifier(
-        n_neighbors=n_neighbors, algorithm=knn_algo, weights="distance"
-    )
+    knn_clf = neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, algorithm=knn_algo, weights="distance")
     # fit data into knn model
     knn_clf.fit(X, y)
 
@@ -105,7 +101,7 @@ def train(
     X_2d = pca.fit_transform(X)
 
     # Define a colormap to map class labels to colors
-    cmap = plt.get_cmap('viridis')
+    cmap = plt.get_cmap("viridis")
     colors = [cmap(i) for i in np.linspace(0, 1, len(np.unique(y)))]
 
     # Map each class label to a color
@@ -116,13 +112,16 @@ def train(
     plt.scatter(X_2d[:, 0], X_2d[:, 1], c=c)
 
     # Add a legend to the plot
-    handles = [plt.plot([],[],color=color_map[label], marker="o", ls="", mec="k", mew=0.5, label=label.replace('_', ' '))[0] for label in np.unique(y)]
-    plt.legend(handles=handles, title="Class", bbox_to_anchor=(1.05, 1), loc='upper left')
+    handles = [
+        plt.plot([], [], color=color_map[label], marker="o", ls="", mec="k", mew=0.5, label=label.replace("_", " "))[0]
+        for label in np.unique(y)
+    ]
+    plt.legend(handles=handles, title="Class", bbox_to_anchor=(1.05, 1), loc="upper left")
     # Adjust the figure size to include the legend
     # plt.subplots_adjust(right=0.8)
 
-    plt.xlabel('PCA Feature 1')
-    plt.ylabel('PCA Feature 2')
+    plt.xlabel("PCA Feature 1")
+    plt.ylabel("PCA Feature 2")
     if NORMALIZE:
         normalized = "_normalized"
         title = "KNN Scatter Plot (PCA) Normalized"
@@ -131,7 +130,9 @@ def train(
         title = "KNN Scatter Plot (PCA)"
     plt.title(title)
     dt_stringnow = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-    plt.savefig(f"{SAVE_FOLDER}knn_scatter_{dt_stringnow}{normalized}.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+    plt.savefig(
+        f"{SAVE_FOLDER}knn_scatter_{dt_stringnow}{normalized}.png", dpi=300, bbox_inches="tight", pad_inches=0.1
+    )
 
     # Save the trained KNN classifier
     if model_save_path is not None:
@@ -141,9 +142,7 @@ def train(
     return knn_clf
 
 
-def validate_predict(
-    test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True
-):
+def validate_predict(test_dir, knn_clf=None, model_path=None, distance_threshold=0.6, normalize=True):
     y_pred = []
     y_true = []
 
@@ -223,10 +222,7 @@ def _predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, 
     :return: a list of names and face locations for the recognized faces in the image: [(name, bounding box), ...].
         For faces of unrecognized persons, the name 'unknown' will be returned.
     """
-    if (
-        not os.path.isfile(X_img_path)
-        or os.path.splitext(X_img_path)[1][1:] not in ALLOWED_EXTENSIONS
-    ):
+    if not os.path.isfile(X_img_path) or os.path.splitext(X_img_path)[1][1:] not in ALLOWED_EXTENSIONS:
         raise Exception("Invalid image path: {}".format(X_img_path))
 
     if knn_clf is None and model_path is None:
@@ -246,9 +242,7 @@ def _predict(X_img_path, knn_clf=None, model_path=None, distance_threshold=0.6, 
         return []
 
     # Find encodings for faces in the test iamge
-    faces_encodings = face_encodings(
-        X_img, known_face_locations=X_face_locations, normalize=normalize
-    )
+    faces_encodings = face_encodings(X_img, known_face_locations=X_face_locations, normalize=normalize)
 
     # Use the KNN model to find the best matches for the test face
     closest_distances = knn_clf.kneighbors(faces_encodings, n_neighbors=1)
@@ -290,9 +284,7 @@ if __name__ == "__main__":
     print("Training complete!")
 
     print("Validating classifier...")
-    validate_predict(
-        predict_dir, model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE
-    )
+    validate_predict(predict_dir, model_path=model_name, distance_threshold=0.5, normalize=NORMALIZE)
 
     # # range 0.1 to 1.0
     # for i in range(0, 11):

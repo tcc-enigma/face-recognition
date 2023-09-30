@@ -9,11 +9,10 @@ import tkinter as tk
 from tkinter import font as tkFont
 from PIL import Image, ImageTk
 
+from constants import *
+
 # Use frontal face detector of Dlib
 detector = dlib.get_frontal_face_detector()
-
-PATH_CAMERA_FACE = "data/data_faces_from_camera/"
-IMG_FACE_PREFIX = "/img_face_"
 
 
 class Face_Register:

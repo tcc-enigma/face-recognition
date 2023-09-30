@@ -103,7 +103,9 @@ def _raw_face_landmarks(face_image, face_locations=None, model="large"):
     if face_locations is None:
         face_locations = _raw_face_locations(face_image)
     else:
-        face_locations = [_css_to_rect(face_location) for face_location in face_locations]
+        if not isinstance(face_locations, dlib.rectangles):
+            # Validate for camera_recognizer.py :237
+            face_locations = [_css_to_rect(face_location) for face_location in face_locations]
 
     # pose_predictor = pose_predictor_68_point
 
@@ -130,9 +132,9 @@ def _normalized_face_landmarks(face_image, face_locations=None, model="large"):
     if face_locations is None:
         face_locations = _raw_face_locations(face_image)
     else:
-        face_locations = [_css_to_rect(face_location) for face_location in face_locations]
-
-    # pose_predictor = pose_predictor_68_point
+        if not isinstance(face_locations, dlib.rectangles):
+            # Validate for camera_recognizer.py :237
+            face_locations = [_css_to_rect(face_location) for face_location in face_locations]
 
     if model == "small":
         pose_predictor = pose_predictor_5_point
