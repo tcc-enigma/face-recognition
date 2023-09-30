@@ -18,6 +18,9 @@ detector = dlib.get_frontal_face_detector()
 class Face_Register:
     def __init__(self):
         self.current_frame_faces_cnt = 0  # cnt for counting faces in current frame
+        if not os.path.isdir(PATH_CAMERA_FACE):
+            os.mkdir(PATH_CAMERA_FACE)
+
         self.cnt_face_folders = len(os.listdir(PATH_CAMERA_FACE))  # cnt for counting face folders
         self.ss_cnt = 0  # cnt for screen shots
 
@@ -80,19 +83,18 @@ class Face_Register:
         folders_rd = os.listdir(PATH_CAMERA_FACE)
         for i in range(len(folders_rd)):
             shutil.rmtree(PATH_CAMERA_FACE + folders_rd[i])
-        if os.path.isfile("data/features_all.csv"):
-            os.remove("data/features_all.csv")
+
+        # if os.path.isfile(PATH_CSV):
+        #     os.remove(PATH_CSV)
 
         self.label_cnt_face_in_database["text"] = "0"
-        self.log_all["text"] = "Face images and `features_all.csv` removed!"
+        # self.log_all["text"] = "Face images and `features_all.csv` removed!"
 
     def GUI_get_input_name(self):
-        if self.face_folder_created_flag:
-            return
-        self.input_name_char = self.input_name.get()
-        self.create_face_folder()
-        self.cnt_face_folders += 1
-        self.label_cnt_face_in_database["text"] = self.cnt_face_folders
+        self.input_name_char = self.input_name.get().replace(" ", "_")
+        if self.create_face_folder():
+            self.cnt_face_folders += 1
+            self.label_cnt_face_in_database["text"] = self.cnt_face_folders
 
     def GUI_info(self):
         tk.Label(self.frame_right_info, text="Face register", font=self.font_title).grid(
@@ -170,14 +172,23 @@ class Face_Register:
         if self.input_name_char:
             self.current_face_dir = f"{PATH_CAMERA_FACE}{self.input_name_char}"
         else:
-            self.current_face_dir = f"{PATH_CAMERA_FACE}{self.input_name_char}"
-        os.makedirs(self.current_face_dir)
-        self.log_all["text"] = '"' + self.current_face_dir + '/" created!'
-        logging.info("\n%-40s %s", "Create folders:", self.current_face_dir)
+            self.current_face_dir = f"{PATH_CAMERA_FACE}unknown"
+        
+        if not os.path.isdir(self.current_face_dir):
+            os.makedirs(self.current_face_dir)
+            self.log_all["text"] = '"' + self.current_face_dir + '/" created!'
+            logging.info("\n%-40s %s", "Create folders:", self.current_face_dir)
+            self.ss_cnt = 0  # Clear the cnt of screen shots
+            ret = False
+        else:    
+            self.log_all["text"] = '"' + self.current_face_dir + '/" already exists!'
+            self.ss_cnt = len(os.listdir(self.current_face_dir))
+            ret = True
 
-        self.ss_cnt = 0  # Clear the cnt of screen shots
         self.face_folder_created_flag = True  # Face folder already created
 
+        return ret
+    
     def save_current_face(self):
         if self.face_folder_created_flag:
             if self.current_frame_faces_cnt == 1:
@@ -206,6 +217,8 @@ class Face_Register:
                     self.log_all["text"] = "Please do not out of range!"
             else:
                 self.log_all["text"] = "No face in current frame!"
+        else:
+            self.log_all["text"] = "No Name Input!"
 
     def get_frame(self):
         try:
