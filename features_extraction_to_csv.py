@@ -7,6 +7,7 @@ import cv2
 
 # Path of cropped faces
 PATH_CAMERA_FACE = "data/data_faces_from_camera/"
+PATH_CSV = "data/faces_features.csv"
 
 # Use frontal face detector of Dlib
 face_detector = dlib.get_frontal_face_detector()
@@ -69,12 +70,12 @@ def return_features_mean_person(path_face_person):
 def main():
     logging.basicConfig(level=logging.INFO)
     # Get the order of latest person
-    person_list = os.listdir("data/data_faces_from_camera/")
-    person_list.sort()
+    faces_folder = os.listdir(PATH_CAMERA_FACE)
+    faces_folder.sort()
 
-    with open("data/faces_features.csv", "w", newline="") as csv_file:
+    with open(PATH_CSV, "w", newline="") as csv_file:
         writer = csv.writer(csv_file)
-        for person in person_list:
+        for person in faces_folder:
             # Get the mean/average features of face/personX, it will be a list with a length of 128D
             # logging.info("%sperson_%s", PATH_CAMERA_FACE, person)
             features_mean_personX = return_features_mean_person(PATH_CAMERA_FACE + person)
@@ -82,7 +83,8 @@ def main():
             # features_mean_personX will be 129D, person name + 128 features
             writer.writerow(features_mean_personX)
             logging.info("\n")
-        logging.info("Save all the features of faces registered into: data/faces_features.csv")
+
+        logging.info(f"Save all the features of faces registered into: {PATH_CSV}")
 
 
 if __name__ == "__main__":
