@@ -75,18 +75,24 @@ def main():
     faces_folder = os.listdir(PATH_CAMERA_FACE)
     faces_folder.sort()
 
-    with open(PATH_CSV, "w", newline="") as csv_file:
+    with open(PATH_CSV, "a", newline="") as csv_file:
         writer = csv.writer(csv_file)
-        for person in faces_folder:
-            # Get the mean/average features of face/personX, it will be a list with a length of 128D
-            # logging.info("%sperson_%s", PATH_CAMERA_FACE, person)
-            features_mean_personX = return_features_mean_person(PATH_CAMERA_FACE + person)
-            features_mean_personX = np.insert(features_mean_personX, 0, person, axis=0)
-            # features_mean_personX will be 129D, person name + 128 features
-            writer.writerow(features_mean_personX)
-            logging.info("\n")
-
-        logging.info(f"Save all the features of faces registered into: {PATH_CSV}")
+        try:
+            for person in faces_folder:
+                # Get the mean/average features of face/personX, it will be a list with a length of 128D
+                # logging.info("%sperson_%s", PATH_CAMERA_FACE, person)
+                features_mean_personX = return_features_mean_person(PATH_CAMERA_FACE + person)
+                features_mean_personX = np.insert(features_mean_personX, 0, person, axis=0)
+                # features_mean_personX will be 129D, person name + 128 features
+                writer.writerow(features_mean_personX)
+                logging.info("\n")
+        except KeyboardInterrupt:
+            logging.info("Interrupted by user")
+            
+        finally:
+            csv_file.close()
+            logging.info(f"Save all the features of faces registered into: {PATH_CSV}")
+            exit(0)
 
 
 if __name__ == "__main__":
